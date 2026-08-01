@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: mas_postgres
+    environment:
+      POSTGRES_USER: mas_user
+      POSTGRES_PASSWORD: mas_password
+      POSTGRES_DB: mas_data_analysis
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
+      - ./database/seed_data.sql:/docker-entrypoint-initdb.d/2_seed.sql
+
+volumes:
+  pgdata:
