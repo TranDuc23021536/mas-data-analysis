@@ -1,0 +1,26 @@
+[
+  {
+    "question": "Doanh thu theo từng danh mục sản phẩm là bao nhiêu?",
+    "sql": "SELECT c.category_name, SUM(oi.quantity * oi.unit_price) AS revenue FROM order_items oi JOIN products p ON oi.product_id = p.product_id JOIN categories c ON p.category_id = c.category_id GROUP BY c.category_name ORDER BY revenue DESC;"
+  },
+  {
+    "question": "Top 5 khách hàng chi tiêu nhiều nhất là ai?",
+    "sql": "SELECT cu.full_name, SUM(oi.quantity * oi.unit_price) AS total_spent FROM order_items oi JOIN orders o ON oi.order_id = o.order_id JOIN customers cu ON o.customer_id = cu.customer_id GROUP BY cu.full_name ORDER BY total_spent DESC LIMIT 5;"
+  },
+  {
+    "question": "Sản phẩm nào có đánh giá trung bình cao nhất?",
+    "sql": "SELECT p.product_name, AVG(r.rating) AS avg_rating FROM reviews r JOIN products p ON r.product_id = p.product_id GROUP BY p.product_name ORDER BY avg_rating DESC LIMIT 5;"
+  },
+  {
+    "question": "Số lượng đơn hàng theo từng tháng?",
+    "sql": "SELECT DATE_TRUNC('month', order_date) AS month, COUNT(*) AS order_count FROM orders GROUP BY month ORDER BY month;"
+  },
+  {
+    "question": "Sản phẩm nào còn tồn kho ít hơn 50?",
+    "sql": "SELECT product_name, stock_quantity FROM products WHERE stock_quantity < 50 ORDER BY stock_quantity ASC;"
+  },
+  {
+    "question": "Khách hàng nào đến từ Hà Nội?",
+    "sql": "SELECT full_name, email FROM customers WHERE city = 'Hanoi';"
+  }
+]
