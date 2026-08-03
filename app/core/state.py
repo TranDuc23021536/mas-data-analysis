@@ -20,5 +20,8 @@ class AgentState(TypedDict, total=False):
     is_valid: bool
     critic_feedback: str
     retry_count: int
+    
+    chart_type: str
+    chart_data: List[Dict[str, Any]]
 
     final_answer: str
