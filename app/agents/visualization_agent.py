@@ -1,3 +1,4 @@
+from decimal import Decimal
 from app.core.state import AgentState
 
 
@@ -6,7 +7,7 @@ def _guess_chart_type(data: list) -> str:
         return "none"
 
     first_row = data[0]
-    numeric_cols = [k for k, v in first_row.items() if isinstance(v, (int, float))]
+    numeric_cols = [k for k, v in first_row.items() if isinstance(v, (int, float, Decimal))]
     text_cols = [k for k, v in first_row.items() if isinstance(v, str)]
     date_like_cols = [k for k in first_row.keys() if "date" in k.lower() or "month" in k.lower() or "time" in k.lower()]
 
