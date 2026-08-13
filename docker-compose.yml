@@ -15,5 +15,30 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
       - ./database/seed_data.sql:/docker-entrypoint-initdb.d/2_seed.sql
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: mas_api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://mas_user:mas_password@db:5432/mas_data_analysis
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: mas_ui
+    environment:
+      API_URL: http://api:8000/analyze
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
 volumes:
   pgdata:

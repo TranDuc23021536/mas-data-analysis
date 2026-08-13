@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
+import os
 
-API_URL = "http://localhost:8000/analyze"
+API_URL = os.getenv("API_URL", "http://localhost:8000/analyze")
 
 st.set_page_config(page_title="MAS Data Analysis", layout="centered")
 st.title("Multi-Agent Data Analysis")
