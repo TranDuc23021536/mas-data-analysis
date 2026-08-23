@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.core.workflow import workflow
+from app.db.database import get_dashboard_summary, get_product_catalog
 
 _API_KEY = os.getenv("API_KEY", "").strip()
 
@@ -164,3 +165,18 @@ def get_session_history(session_id: str):
 def delete_session(session_id: str):
     _SESSION_STORE.pop(session_id, None)
     return {"session_id": session_id, "deleted": True}
+
+@app.get("/dashboard/summary", dependencies=[Depends(require_api_key)])
+def dashboard_summary():
+    try:
+        return get_dashboard_summary()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/catalog/products", dependencies=[Depends(require_api_key)])
+def catalog_products():
+    try:
+        return {"products": get_product_catalog()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
