@@ -25,3 +25,9 @@ class AgentState(TypedDict, total=False):
     chart_data: List[Dict[str, Any]]
 
     final_answer: str
+    
+    chart_type: str
+    chart_data: List[Dict[str, Any]]
+    forecast_result: List[Dict[str, Any]]
+    forecast_trend: str
+    anomaly_result: List[Dict[str, Any]]

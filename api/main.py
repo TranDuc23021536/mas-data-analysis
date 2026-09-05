@@ -11,7 +11,8 @@ from pydantic import BaseModel
 from app.core.workflow import workflow
 from app.db.database import get_dashboard_summary, get_product_catalog
 
-_API_KEY = os.getenv("API_KEY", "").strip()
+from app.core.config import settings
+_API_KEY = settings.API_KEY
 
 
 def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
