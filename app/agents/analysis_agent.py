@@ -1,9 +1,9 @@
 import json
-from langchain_groq import ChatGroq
-from app.core.config import settings
+import logging
 from app.core.state import AgentState
+from app.core.llm import invoke_with_retry
 
-_llm = ChatGroq(model=settings.GROQ_MODEL, api_key=settings.GROQ_API_KEY, temperature=0)
+logger = logging.getLogger("mas.analysis")
 
 _SYSTEM_PROMPT = """Bạn là Analysis Agent. Dựa trên câu hỏi và dữ liệu kết quả truy vấn SQL, hãy rút ra insight ngắn gọn.
 
@@ -17,12 +17,14 @@ def run_analysis_agent(state: AgentState) -> AgentState:
     question = state.get("rewritten_question") or state["question"]
     data = state.get("sql_result", [])
 
+    logger.info(f"Analyzing {len(data)} rows for: {question[:80]}")
+
     user_prompt = f"Câu hỏi: {question}\n\nDữ liệu (JSON):\n{json.dumps(data, ensure_ascii=False, default=str)}"
 
-    response = _llm.invoke([
+    insight = invoke_with_retry([
         {"role": "system", "content": _SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},
     ])
 
-    state["insight"] = response.content.strip()
+    state["insight"] = insight
     return state

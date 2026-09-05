@@ -14,6 +14,9 @@ from app.db.database import get_dashboard_summary, get_product_catalog
 from app.core.config import settings
 _API_KEY = settings.API_KEY
 
+from app.core.logging_config import setup_logging
+setup_logging()
+
 
 def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
     if not _API_KEY:

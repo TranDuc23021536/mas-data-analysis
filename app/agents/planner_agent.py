@@ -1,9 +1,9 @@
 import json
-from langchain_groq import ChatGroq
-from app.core.config import settings
+import logging
 from app.core.state import AgentState
+from app.core.llm import invoke_with_retry, strip_code_fence
 
-_llm = ChatGroq(model=settings.GROQ_MODEL, api_key=settings.GROQ_API_KEY, temperature=0)
+logger = logging.getLogger("mas.planner")
 
 _SYSTEM_PROMPT = """Bạn là Planner Agent trong hệ thống phân tích dữ liệu đa tác tử.
 Nhiệm vụ: phân tích câu hỏi người dùng và trả về JSON với các trường:
@@ -23,16 +23,19 @@ def run_planner(state: AgentState) -> AgentState:
 
     user_prompt = f"Lịch sử hội thoại:\n{history_text}\n\nCâu hỏi hiện tại: {state['question']}"
 
-    response = _llm.invoke([
+    logger.info(f"Planning for question: {state['question'][:80]}")
+
+    content = invoke_with_retry([
         {"role": "system", "content": _SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},
     ])
+    content = strip_code_fence(content, lang_hint="json")
 
-    content = response.content.strip()
-    if content.startswith("```"):
-        content = content.strip("`").replace("json", "", 1).strip()
-
-    parsed = json.loads(content)
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError:
+        logger.error(f"Planner returned invalid JSON: {content}")
+        parsed = {}
 
     state["is_smalltalk"] = parsed.get("is_smalltalk", False)
     state["rewritten_question"] = parsed.get("rewritten_question", state["question"])
