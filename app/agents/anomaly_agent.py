@@ -32,4 +32,4 @@ def run_anomaly_agent(state: AgentState) -> AgentState:
                 anomalies.append({**data[i], "z_score": round(float(z), 2)})
 
     state["anomaly_result"] = anomalies
-    return state
+    return state    

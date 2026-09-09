@@ -31,3 +31,4 @@ class AgentState(TypedDict, total=False):
     forecast_result: List[Dict[str, Any]]
     forecast_trend: str
     anomaly_result: List[Dict[str, Any]]
+    active_table: str

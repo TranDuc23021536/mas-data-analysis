@@ -34,3 +34,15 @@ def health() -> bool:
         return resp.status_code == 200
     except Exception:
         return False
+    
+def upload_file(file_bytes: bytes, filename: str) -> dict:
+    files = {"file": (filename, file_bytes)}
+    resp = requests.post(f"{API_BASE}/upload/csv", files=files, headers=_HEADERS, timeout=60)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def list_uploaded_tables() -> list:
+    resp = requests.get(f"{API_BASE}/upload/tables", headers=_HEADERS, timeout=30)
+    resp.raise_for_status()
+    return resp.json().get("tables", [])

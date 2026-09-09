@@ -1,6 +1,5 @@
 from app.agents.analysis_agent import run_analysis_agent
 
-
 def test_analysis_returns_insight(mock_llm_response, sample_sql_rows):
     with mock_llm_response("Electronics dat doanh thu cao nhat."):
         state = {"question": "test", "sql_result": sample_sql_rows}

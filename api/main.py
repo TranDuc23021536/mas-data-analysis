@@ -2,6 +2,10 @@ import json
 import os
 import uuid
 from contextlib import asynccontextmanager
+import re
+import pandas as pd
+from fastapi import UploadFile, File
+from app.db.database import engine
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -72,14 +76,25 @@ def health():
     return {"status": "ok"}
 
 
+_SESSION_ACTIVE_TABLE: dict[str, str] = {}
+
+
 def _run_pipeline(question: str, session_id: str) -> dict:
     chat_history = _get_session_history(session_id)
+    active_table = _SESSION_ACTIVE_TABLE.get(session_id, "")
+
     result = workflow.invoke({
         "question": question,
         "chat_history": chat_history,
         "retry_count": 0,
+        "active_table": active_table,
     })
+
     _append_session_turn(session_id, question, result.get("final_answer", ""))
+
+    if result.get("active_table"):
+        _SESSION_ACTIVE_TABLE[session_id] = result["active_table"]
+
     return result
 
 
@@ -184,3 +199,55 @@ def catalog_products():
         return {"products": get_product_catalog()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+def _sanitize_table_name(filename: str) -> str:
+    name = filename.rsplit(".", 1)[0]
+    name = re.sub(r"[^a-zA-Z0-9_]", "_", name).lower()
+    if not name or name[0].isdigit():
+        name = f"t_{name}"
+    return name[:50]
+
+
+@app.post("/upload/csv", dependencies=[Depends(require_api_key)])
+async def upload_csv(file: UploadFile = File(...)):
+    if not (file.filename.endswith(".csv") or file.filename.endswith(".xlsx")):
+        raise HTTPException(status_code=400, detail="Chỉ hỗ trợ file .csv hoặc .xlsx")
+
+    try:
+        contents = await file.read()
+        import io
+        if file.filename.endswith(".csv"):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Không đọc được file: {e}")
+
+    if df.empty:
+        raise HTTPException(status_code=400, detail="File không có dữ liệu")
+
+    table_name = _sanitize_table_name(file.filename)
+    df.columns = [re.sub(r"[^a-zA-Z0-9_]", "_", str(c)).lower() for c in df.columns]
+
+    try:
+        df.to_sql(table_name, engine, if_exists="replace", index=False)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Không lưu được vào database: {e}")
+
+    return {
+        "table_name": table_name,
+        "rows_loaded": len(df),
+        "columns": list(df.columns),
+    }
+
+
+@app.get("/upload/tables", dependencies=[Depends(require_api_key)])
+def list_uploaded_tables():
+    from app.db.database import run_readonly_query
+    rows = run_readonly_query("""
+        SELECT table_name FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name NOT IN ('categories', 'products', 'customers', 'orders', 'order_items', 'reviews')
+        ORDER BY table_name;
+    """)
+    return {"tables": [r["table_name"] for r in rows]}

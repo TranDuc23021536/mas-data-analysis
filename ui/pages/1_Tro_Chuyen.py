@@ -1,13 +1,30 @@
 import streamlit as st
 from lib.theme import apply_theme
 from lib.session_manager import init_session, add_turn
-from lib.api_client import analyze
+from lib.api_client import analyze, upload_file, list_uploaded_tables
 
 st.set_page_config(page_title="Tro Chuyen", layout="centered")
 apply_theme()
 init_session()
 
 st.title("Tro chuyen voi he thong")
+with st.expander("Tai du lieu rieng len de phan tich (CSV/Excel)"):
+    uploaded = st.file_uploader("Chon file", type=["csv", "xlsx"])
+    if uploaded is not None:
+        if st.button("Tai len"):
+            with st.spinner("Dang xu ly file..."):
+                try:
+                    result = upload_file(uploaded.read(), uploaded.name)
+                    st.success(f"Da tao bang '{result['table_name']}' voi {result['rows_loaded']} dong, cot: {', '.join(result['columns'])}")
+                except Exception as e:
+                    st.error(f"Loi khi tai file: {e}")
+
+    try:
+        tables = list_uploaded_tables()
+        if tables:
+            st.caption(f"Cac bang da tai len: {', '.join(tables)}")
+    except Exception:
+        pass
 
 for turn in st.session_state.chat_history:
     with st.chat_message(turn["role"]):

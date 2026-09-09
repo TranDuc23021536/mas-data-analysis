@@ -3,6 +3,7 @@ from app.core.state import AgentState
 from app.core.schema_linking import get_relevant_examples, format_examples_for_prompt
 from app.core.llm import invoke_with_retry, strip_code_fence
 from app.db.database import run_readonly_query, get_schema_description, UnsafeQueryError
+import re
 
 logger = logging.getLogger("mas.sql_agent")
 
@@ -34,6 +35,9 @@ def run_sql_agent(state: AgentState) -> AgentState:
     sql = strip_code_fence(sql, lang_hint="sql")
 
     state["sql_query"] = sql
+    extracted_table = _extract_table_name(sql)
+    if extracted_table:
+        state["active_table"] = extracted_table
 
     try:
         state["sql_result"] = run_readonly_query(sql)
@@ -49,3 +53,7 @@ def run_sql_agent(state: AgentState) -> AgentState:
         state["sql_error"] = str(e)
 
     return state
+
+def _extract_table_name(sql: str) -> str | None:
+    match = re.search(r"FROM\s+(\w+)", sql, re.IGNORECASE)
+    return match.group(1) if match else None

@@ -12,6 +12,7 @@ Nhiệm vụ: phân tích câu hỏi người dùng và trả về JSON với c�
 - needs_chart: true nếu câu hỏi cần biểu đồ trực quan
 - needs_forecast: true nếu câu hỏi cần dự báo xu hướng tương lai
 - needs_anomaly: true nếu câu hỏi cần phát hiện bất thường
+- rewritten_question PHẢI nêu rõ tên bảng dữ liệu nếu câu hỏi hiện tại là câu hỏi tiếp nối (không tự nêu tên bảng mới), dùng đúng tên bảng "đang được thảo luận gần nhất" nếu có, trừ khi người dùng chỉ định rõ bảng khác.
 
 Chỉ trả về JSON, không giải thích thêm."""
 
@@ -21,7 +22,11 @@ def run_planner(state: AgentState) -> AgentState:
     for turn in state.get("chat_history", [])[-5:]:
         history_text += f"{turn['role']}: {turn['content']}\n"
 
-    user_prompt = f"Lịch sử hội thoại:\n{history_text}\n\nCâu hỏi hiện tại: {state['question']}"
+    active_table = state.get("active_table", "")
+    table_hint = f"\n\nBảng dữ liệu đang được thảo luận gần nhất: {active_table}" if active_table else ""
+
+    user_prompt = f"Lịch sử hội thoại:\n{history_text}{table_hint}\n\nCâu hỏi hiện tại: {state['question']}"
+
 
     logger.info(f"Planning for question: {state['question'][:80]}")
 

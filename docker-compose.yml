@@ -34,11 +34,11 @@ services:
       dockerfile: Dockerfile.ui
     container_name: mas_ui
     environment:
-      API_URL: http://api:8000/analyze
+      API_URL: http://api:8000
     ports:
       - "8501:8501"
     depends_on:
       - api
 
 volumes:
-  pgdata:
+  pgdata: 

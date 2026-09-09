@@ -10,7 +10,9 @@ _SYSTEM_PROMPT = """Bạn là Analysis Agent. Dựa trên câu hỏi và dữ li
 Yêu cầu bắt buộc:
 - Chỉ dùng số liệu có trong dữ liệu được cung cấp, không được bịa thêm số liệu.
 - Nếu dữ liệu rỗng, nói rõ không có dữ liệu phù hợp.
+- Không suy diễn về tổng số bản ghi của toàn bộ bảng dữ liệu gốc, chỉ mô tả đúng những gì có trong dữ liệu được cung cấp (dữ liệu này có thể đã được giới hạn bằng LIMIT).
 - Trả lời bằng tiếng Việt, 2-4 câu, tập trung vào điểm nổi bật nhất (giá trị cao nhất/thấp nhất, xu hướng, so sánh)."""
+
 
 
 def run_analysis_agent(state: AgentState) -> AgentState:
