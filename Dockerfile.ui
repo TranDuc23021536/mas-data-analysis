@@ -10,4 +10,4 @@ COPY ui ./ui
 
 EXPOSE 8501
 
-CMD ["streamlit", "run", "ui/app.py", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "ui/Trang_Chu.py", "--server.address=0.0.0.0"]
