@@ -8,11 +8,12 @@ logger = logging.getLogger("mas.planner")
 _SYSTEM_PROMPT = """Bạn là Planner Agent trong hệ thống phân tích dữ liệu đa tác tử.
 Nhiệm vụ: phân tích câu hỏi người dùng và trả về JSON với các trường:
 - is_smalltalk: true nếu câu hỏi chỉ là xã giao (chào hỏi, cảm ơn, không liên quan dữ liệu)
-- rewritten_question: viết lại câu hỏi đầy đủ ngữ nghĩa dựa trên lịch sử hội thoại (nếu câu hỏi là câu tiếp nối như "còn quý trước thì sao"), nếu không cần viết lại thì giữ nguyên câu hỏi gốc
+- rewritten_question: viết lại câu hỏi đầy đủ ngữ nghĩa dựa trên lịch sử hội thoại (nếu câu hỏi là câu tiếp nối như "còn quý trước thì sao"), nếu không cần viết lại thì giữ nguyên câu hỏi gốc. rewritten_question PHẢI nêu rõ tên bảng dữ liệu nếu câu hỏi hiện tại là câu hỏi tiếp nối (không tự nêu tên bảng mới), dùng đúng tên bảng "đang được thảo luận gần nhất" nếu có, trừ khi người dùng chỉ định rõ bảng khác.
 - needs_chart: true nếu câu hỏi cần biểu đồ trực quan
 - needs_forecast: true nếu câu hỏi cần dự báo xu hướng tương lai
 - needs_anomaly: true nếu câu hỏi cần phát hiện bất thường
-- rewritten_question PHẢI nêu rõ tên bảng dữ liệu nếu câu hỏi hiện tại là câu hỏi tiếp nối (không tự nêu tên bảng mới), dùng đúng tên bảng "đang được thảo luận gần nhất" nếu có, trừ khi người dùng chỉ định rõ bảng khác.
+- chart_only: true CHỈ KHI người dùng đang yêu cầu đổi cách hiển thị dữ liệu ĐÃ CÓ sẵn từ câu trả lời trước (ví dụ "cho xem dạng khác", "đổi sang biểu đồ tròn", "dạng bảng thay vì biểu đồ"), KHÔNG hỏi thêm dữ liệu mới. Nếu không chắc, để false.
+- requested_chart_type: nếu chart_only=true hoặc người dùng nêu rõ loại biểu đồ mong muốn, trả về một trong: "bar", "line", "pie", "table". Nếu không xác định được, để chuỗi rỗng.
 
 Chỉ trả về JSON, không giải thích thêm."""
 
@@ -26,7 +27,6 @@ def run_planner(state: AgentState) -> AgentState:
     table_hint = f"\n\nBảng dữ liệu đang được thảo luận gần nhất: {active_table}" if active_table else ""
 
     user_prompt = f"Lịch sử hội thoại:\n{history_text}{table_hint}\n\nCâu hỏi hiện tại: {state['question']}"
-
 
     logger.info(f"Planning for question: {state['question'][:80]}")
 
@@ -47,5 +47,11 @@ def run_planner(state: AgentState) -> AgentState:
     state["needs_chart"] = parsed.get("needs_chart", False)
     state["needs_forecast"] = parsed.get("needs_forecast", False)
     state["needs_anomaly"] = parsed.get("needs_anomaly", False)
+    state["chart_only"] = parsed.get("chart_only", False)
+    state["requested_chart_type"] = parsed.get("requested_chart_type", "")
+
+    # chart_only chỉ hợp lệ nếu có dữ liệu cũ để tái sử dụng
+    if state["chart_only"] and not state.get("sql_result"):
+        state["chart_only"] = False
 
     return state

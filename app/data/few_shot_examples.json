@@ -22,5 +22,17 @@
   {
     "question": "Khách hàng nào đến từ Hà Nội?",
     "sql": "SELECT full_name, email FROM customers WHERE city = 'Hanoi';"
+  },
+  {
+    "question": "Co nhung bang nao trong he thong",
+    "sql": "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;"
+  },
+  {
+    "question": "Bang products co nhung cot nao",
+    "sql": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'products' ORDER BY ordinal_position;"
+  },
+  {
+    "question": "Cho toi thong tin khai quat ve cac bang",
+    "sql": "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema = 'public' ORDER BY table_name, ordinal_position;"
   }
 ]

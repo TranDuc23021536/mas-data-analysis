@@ -77,23 +77,28 @@ def health():
 
 
 _SESSION_ACTIVE_TABLE: dict[str, str] = {}
+_SESSION_LAST_SQL_RESULT: dict[str, list] = {}
 
 
 def _run_pipeline(question: str, session_id: str) -> dict:
     chat_history = _get_session_history(session_id)
     active_table = _SESSION_ACTIVE_TABLE.get(session_id, "")
+    last_sql_result = _SESSION_LAST_SQL_RESULT.get(session_id, [])
 
     result = workflow.invoke({
         "question": question,
         "chat_history": chat_history,
         "retry_count": 0,
         "active_table": active_table,
+        "sql_result": last_sql_result,
     })
 
     _append_session_turn(session_id, question, result.get("final_answer", ""))
 
     if result.get("active_table"):
         _SESSION_ACTIVE_TABLE[session_id] = result["active_table"]
+    if result.get("sql_result"):
+        _SESSION_LAST_SQL_RESULT[session_id] = result["sql_result"]
 
     return result
 
@@ -145,9 +150,17 @@ def analyze_stream(req: AnalyzeRequest):
 
     session_id = req.session_id or str(uuid.uuid4())
     chat_history = _get_session_history(session_id)
+    active_table = _SESSION_ACTIVE_TABLE.get(session_id, "")
+    last_sql_result = _SESSION_LAST_SQL_RESULT.get(session_id, [])
 
     def event_generator():
-        initial_state = {"question": req.question, "chat_history": chat_history, "retry_count": 0}
+        initial_state = {
+            "question": req.question,
+            "chat_history": chat_history,
+            "retry_count": 0,
+            "active_table": active_table,
+            "sql_result": last_sql_result,
+        }
         last_state = dict(initial_state)
         try:
             for update in workflow.stream(initial_state, stream_mode="updates"):
@@ -160,6 +173,10 @@ def analyze_stream(req: AnalyzeRequest):
             return
 
         _append_session_turn(session_id, req.question, last_state.get("final_answer", ""))
+        if last_state.get("active_table"):
+            _SESSION_ACTIVE_TABLE[session_id] = last_state["active_table"]
+        if last_state.get("sql_result"):
+            _SESSION_LAST_SQL_RESULT[session_id] = last_state["sql_result"]
 
         final_payload = {
             "session_id": session_id,

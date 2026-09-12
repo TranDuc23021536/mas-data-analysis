@@ -80,12 +80,25 @@ if question:
             if result.get("chart_type", "none") != "none" and result.get("chart_data"):
                 import pandas as pd
                 df = pd.DataFrame(result["chart_data"])
+
+                label_col = df.columns[0]
+                value_cols = [c for c in df.columns if c != label_col]
+                for c in value_cols:
+                    df[c] = pd.to_numeric(df[c], errors="coerce")
+
+                df = df.set_index(label_col)
+
                 if result["chart_type"] == "bar":
-                    st.bar_chart(df.set_index(df.columns[0]))
+                    st.bar_chart(df, height=400, use_container_width=True)
                 elif result["chart_type"] == "line":
-                    st.line_chart(df.set_index(df.columns[0]))
+                    st.line_chart(df, height=400, use_container_width=True)
+                elif result["chart_type"] == "pie":
+                    import matplotlib.pyplot as plt
+                    fig, ax = plt.subplots()
+                    df[value_cols[0]].plot.pie(ax=ax, autopct="%1.1f%%", ylabel="")
+                    st.pyplot(fig)
                 else:
-                    st.dataframe(df)
+                    st.dataframe(df, use_container_width=True)
 
             if result.get("forecast_result"):
                 st.subheader("Du bao")

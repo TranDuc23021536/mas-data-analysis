@@ -32,3 +32,6 @@ class AgentState(TypedDict, total=False):
     forecast_trend: str
     anomaly_result: List[Dict[str, Any]]
     active_table: str
+    
+    chart_only: bool
+    requested_chart_type: str

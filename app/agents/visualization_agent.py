@@ -21,12 +21,18 @@ def _guess_chart_type(data: list) -> str:
 
 
 def run_visualization_agent(state: AgentState) -> AgentState:
-    if not state.get("needs_chart"):
+    if not state.get("needs_chart") and not state.get("chart_only"):
         state["chart_type"] = "none"
         state["chart_data"] = []
         return state
 
     data = state.get("sql_result", [])
-    state["chart_type"] = _guess_chart_type(data)
+
+    requested = state.get("requested_chart_type", "")
+    if requested in ("bar", "line", "pie", "table"):
+        state["chart_type"] = requested if data else "none"
+    else:
+        state["chart_type"] = _guess_chart_type(data)
+
     state["chart_data"] = data
     return state
