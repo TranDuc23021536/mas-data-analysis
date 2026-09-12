@@ -1,5 +1,6 @@
 import os
 import requests
+import json
 
 API_BASE = os.getenv("API_URL", "http://localhost:8000")
 API_KEY = os.getenv("API_KEY", "mas_secret_key_2026")
@@ -46,3 +47,27 @@ def list_uploaded_tables() -> list:
     resp = requests.get(f"{API_BASE}/upload/tables", headers=_HEADERS, timeout=30)
     resp.raise_for_status()
     return resp.json().get("tables", [])
+
+def analyze_stream(question: str, session_id: str | None = None):
+    payload = {"question": question}
+    if session_id:
+        payload["session_id"] = session_id
+
+    with requests.post(
+        f"{API_BASE}/analyze/stream",
+        json=payload,
+        headers=_HEADERS,
+        stream=True,
+        timeout=120,
+    ) as resp:
+        resp.raise_for_status()
+        event_type = None
+        for raw_line in resp.iter_lines(decode_unicode=True):
+            if not raw_line:
+                continue
+            if raw_line.startswith("event:"):
+                event_type = raw_line.split(":", 1)[1].strip()
+            elif raw_line.startswith("data:"):
+                data_str = raw_line.split(":", 1)[1].strip()
+                data = json.loads(data_str)
+                yield event_type, data
