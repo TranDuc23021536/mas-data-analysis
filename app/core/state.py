@@ -35,3 +35,7 @@ class AgentState(TypedDict, total=False):
     
     chart_only: bool
     requested_chart_type: str
+    
+    approved: bool
+    target_agent: str
+    fact_check_issues: List[str]

@@ -27,11 +27,17 @@ def _route_after_visualization(state: AgentState) -> str:
 
 
 def _route_after_critic(state: AgentState) -> str:
-    if state.get("is_valid"):
+    if state.get("approved", state.get("is_valid", True)):
         return "responder"
     if state.get("retry_count", 0) >= MAX_RETRIES:
         return "responder"
     return "retry"
+
+
+def _route_after_retry(state: AgentState) -> str:
+    if state.get("target_agent") == "analysis":
+        return "analysis"
+    return "sql"
 
 
 def _increment_retry(state: AgentState) -> AgentState:
@@ -64,8 +70,8 @@ def build_workflow():
     graph.add_edge("analysis", "visualization")
 
     graph.add_conditional_edges("visualization", _route_after_visualization, {
-        "forecast": "forecast",
         "responder": "responder",
+        "forecast": "forecast",
     })
 
     graph.add_edge("forecast", "anomaly")
@@ -76,7 +82,11 @@ def build_workflow():
         "responder": "responder",
     })
 
-    graph.add_edge("retry", "sql")
+    graph.add_conditional_edges("retry", _route_after_retry, {
+        "sql": "sql",
+        "analysis": "analysis",
+    })
+
     graph.add_edge("responder", END)
 
     return graph.compile()

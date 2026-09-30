@@ -39,9 +39,17 @@ def run_sql_agent(state: AgentState) -> AgentState:
 
     logger.info(f"Generating SQL for: {question[:80]}")
 
+    user_content = question
+    if state.get("retry_count", 0) > 0 and state.get("target_agent") == "sql" and state.get("critic_feedback"):
+        user_content += (
+            f"\n\nCâu SQL trước: {state.get('sql_query', '')}\n"
+            f"Bị Critic từ chối vì: {state['critic_feedback']}\n"
+            "Hãy sinh câu SQL khác, sửa đúng lỗi này."
+        )
+
     sql = invoke_with_retry([
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": question},
+        {"role": "user", "content": user_content},
     ])
     sql = strip_code_fence(sql, lang_hint="sql")
 
